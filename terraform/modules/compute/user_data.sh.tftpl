@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+
+dnf install -y docker awscli ruby wget
+systemctl enable --now docker
+
+# CodeDeploy agent is required by the CodeDeploy stage of each pipeline.
+cd /tmp
+wget -q "https://aws-codedeploy-${aws_region}.s3.${aws_region}.amazonaws.com/latest/install" -O codedeploy-install
+chmod +x codedeploy-install
+./codedeploy-install auto
+systemctl enable --now codedeploy-agent
+
+for attempt in $(seq 1 30); do
+  if aws ecr get-login-password --region '${aws_region}' | docker login --username AWS --password-stdin "$(echo '${image_uri}' | cut -d/ -f1)"; then
+    break
+  fi
+  sleep 10
+done
+
+install -d -m 0755 /etc/laravel
+cat > '/etc/laravel/${app_role}.env' <<'EOF'
+APP_ROLE=${app_role}
+AWS_REGION=${aws_region}
+DB_HOST=${database_host}
+DB_SECRET_ARN=${database_secret_arn}
+APP_SECRET_ARN=${application_secret_arn}
+REDIS_HOST=${redis_host}
+UPLOADS_BUCKET=${uploads_bucket}
+EOF
+chmod 0600 '/etc/laravel/${app_role}.env'
+
+docker pull '${image_uri}'
+docker rm -f 'laravel-${app_role}' || true
+docker run -d --name 'laravel-${app_role}' --restart unless-stopped -p 80:80 \
+  --env-file '/etc/laravel/${app_role}.env' \
+  '${image_uri}'

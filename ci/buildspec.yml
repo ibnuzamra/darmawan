@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws --version
+      - ECR_REGISTRY="$(echo "$IMAGE_REPO_NAME" | cut -d/ -f1)"
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+      - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest}"
+      - IMAGE_TAG="${IMAGE_TAG:0:12}"
+  build:
+    commands:
+      - docker build --pull -t "$IMAGE_REPO_NAME:$IMAGE_TAG" .
+      - docker tag "$IMAGE_REPO_NAME:$IMAGE_TAG" "$IMAGE_REPO_NAME:latest"
+  post_build:
+    commands:
+      - docker push "$IMAGE_REPO_NAME:$IMAGE_TAG"
+      - docker push "$IMAGE_REPO_NAME:latest"
+      - printf '{"imageUri":"%s"}\n' "$IMAGE_REPO_NAME:$IMAGE_TAG" > image-detail.json
+      - printf 'APP_COMPONENT=%s\nAWS_REGION=%s\n' "$APP_COMPONENT" "$AWS_DEFAULT_REGION" > deployment.env
+
+artifacts:
+  files:
+    - appspec.yml
+    - image-detail.json
+    - deployment.env
+    - scripts/**/*
+  discard-paths: no
+
+cache:
+  paths:
+    - /root/.cache/**/*
+    - /root/.composer/cache/**/*
+    - node_modules/**/*

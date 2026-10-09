@@ -1,0 +1,9 @@
+aws_account_id   = "123456789012"
+backend_image_uri = "123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/laravel-production-backend:latest"
+frontend_image_uri = "123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/laravel-production-frontend:latest"
+github_owner      = "your-github-organization"
+github_repositories = {
+  backend  = "laravel-backend"
+  frontend = "laravel-frontend"
+}
+alert_email = "devops@example.com"
