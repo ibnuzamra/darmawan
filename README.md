@@ -1,4 +1,4 @@
-# Technical Test – DevOps Engineer
+# Technical Test – DevOps Engineer - SILAKAN DIGUNAKAN
 
 Submission untuk technical test DevOps Engineer PT. Darmawan Aryansah Teknologi.
 
@@ -33,7 +33,7 @@ darmawan/
 └── README.md
 ```
 
-## Memulai Cepat
+## Quick Start
 
 ### 1. Bootstrap backend remote state Terraform
 
